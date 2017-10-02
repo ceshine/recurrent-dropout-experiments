@@ -1,6 +1,8 @@
 
 # coding: utf-8
 
+# # (Keras) Cornell Movie Review Dataset
+
 # Based on https://github.com/yaringal/BayesianRNN/blob/master/Example/sentiment_lstm_regression.py
 
 # In[1]:
@@ -22,7 +24,7 @@ from yaringal_dataset import loader
 
 get_ipython().magic('matplotlib inline')
 plt.style.use('fivethirtyeight')
-plt.rcParams["figure.figsize"] = (10, 5)
+plt.rcParams["figure.figsize"] = (8, 5)
 
 # Global params:
 NB_WORDS = 20000
@@ -77,7 +79,7 @@ model = get_model(rdrop=0.25, odrop=0.25, edrop=0, idrop=0.25, weight_decay=1e-4
 
 
 modeltest_1 = ModelTest(X_test, Yt=Y_test,
-                        test_every_X_epochs=1, verbose=0, T=4,
+                        test_every_X_epochs=2, verbose=0, T=10,
                         mean_y_train=mean_y_train, std_y_train=std_y_train,
                         loss='euclidean', batch_size=TEST_BATCH_SIZE)
 
@@ -85,57 +87,37 @@ modeltest_1 = ModelTest(X_test, Yt=Y_test,
 # In[6]:
 
 
-hisotry_1 = model.fit(
+history_1 = model.fit(
     X_train, Y_train,
     verbose=2,
     shuffle=True,
     # validation_data=[X_test, Y_test],
-    batch_size=BATCH_SIZE, epochs=250, callbacks=[modeltest_1])
+    batch_size=BATCH_SIZE, epochs=200, callbacks=[modeltest_1])
+
+
+# In[24]:
+
+
+print("Best RMSE: {:.4f} Best Epoch: {}".format(
+    np.min([x[1] ** 0.5 for x in modeltest_1.history]), 
+    (np.argmin([x[1] ** 0.5 for x in modeltest_1.history]) + 1)*2
+))
 
 
 # ## Standard LSTM w/o Dropout
 
-# In[7]:
+# In[10]:
 
 
 print('Build model...')
 model = get_model(edrop=0, rdrop=0, odrop=0, idrop=0, weight_decay=1e-10, lr=1e-3)
 
 
-# In[8]:
-
-
-modeltest_2 = ModelTest(X_test, Yt=Y_test,
-                        test_every_X_epochs=1, verbose=0, T=2,
-                        mean_y_train=mean_y_train, std_y_train=std_y_train,
-                        loss='euclidean', batch_size=TEST_BATCH_SIZE)
-
-
-# In[9]:
-
-
-hisotry_2 = model.fit(
-    X_train, Y_train,
-    verbose=2,
-    shuffle=True,
-    # validation_data=[X_test, Y_test],
-    batch_size=BATCH_SIZE, epochs=250, callbacks=[modeltest_2])
-
-
-# ## LSTM with Standard Dropout (different mask at differnt time steps)
-
-# In[10]:
-
-
-print('Build model...')
-model = get_model(edrop=0.3, rdrop=0, odrop=0.3, idrop=0, weight_decay=1e-4, lr=1e-3)
-
-
 # In[11]:
 
 
-modeltest_3 = ModelTest(X_test, Yt=Y_test,
-                        test_every_X_epochs=1, verbose=0, T=4,
+modeltest_2 = ModelTest(X_test, Yt=Y_test,
+                        test_every_X_epochs=2, verbose=0, T=1,
                         mean_y_train=mean_y_train, std_y_train=std_y_train,
                         loss='euclidean', batch_size=TEST_BATCH_SIZE)
 
@@ -143,30 +125,97 @@ modeltest_3 = ModelTest(X_test, Yt=Y_test,
 # In[12]:
 
 
-hisotry_3 = model.fit(
+history_2 = model.fit(
     X_train, Y_train,
     verbose=2,
     shuffle=True,
     # validation_data=[X_test, Y_test],
-    batch_size=BATCH_SIZE, epochs=250, callbacks=[modeltest_3])
+    batch_size=BATCH_SIZE, epochs=200, callbacks=[modeltest_2]
+)
 
 
-# ## Visualizations
+# In[25]:
+
+
+print("Best RMSE: {:.4f} Best Epoch: {}".format(
+    np.min([x[1] ** 0.5 for x in modeltest_2.history]), 
+    (np.argmin([x[1] ** 0.5 for x in modeltest_2.history]) + 1)*2
+))
+
+
+# ## LSTM with Standard Dropout (different mask at differnt time steps)
+
+# In[13]:
+
+
+print('Build model...')
+model = get_model(edrop=0.3, rdrop=0, odrop=0.3, idrop=0, weight_decay=1e-4, lr=1e-3)
+
 
 # In[14]:
 
 
-plt.title("Log Loss Comparison")
-plt.plot(np.arange(len(modeltest_1.history)), [x[0] ** 0.5 for x in modeltest_1.history], label="variational")
-plt.plot(np.arange(len(modeltest_2.history)), [x[0] ** 0.5 for x in modeltest_2.history], "g-", label="no dropout")
-plt.plot(np.arange(len(modeltest_3.history)), [x[0] ** 0.5 for x in modeltest_3.history], "y-", label="naive dropout")
+modeltest_3 = ModelTest(X_test, Yt=Y_test,
+                        test_every_X_epochs=2, verbose=0, T=10,
+                        mean_y_train=mean_y_train, std_y_train=std_y_train,
+                        loss='euclidean', batch_size=TEST_BATCH_SIZE)
+
+
+# In[15]:
+
+
+history_3 = model.fit(
+    X_train, Y_train,
+    verbose=2,
+    shuffle=True,
+    # validation_data=[X_test, Y_test],
+    batch_size=BATCH_SIZE, epochs=200, callbacks=[modeltest_3])
+
+
+# In[26]:
+
+
+print("Best RMSE: {:.4f} Best Epoch: {}".format(
+    np.min([x[1] ** 0.5 for x in modeltest_3.history]), 
+    (np.argmin([x[1] ** 0.5 for x in modeltest_3.history]) + 1)*2
+))
+
+
+# ## Visualizations
+
+# In[40]:
+
+
+plt.figure(figsize=(12, 4))
+plt.subplot(1, 2, 1)
+plt.title("Raw MSE Comparison - Training Set")
+plt.plot(np.arange(len(history_1.history["mean_squared_error"])), 
+         history_1.history["mean_squared_error"], label="variational")
+plt.plot(np.arange(len(history_2.history["mean_squared_error"])), 
+         history_2.history["mean_squared_error"], "g-", label="no dropout")
+plt.plot(np.arange(len(history_3.history["mean_squared_error"])), 
+         history_3.history["mean_squared_error"], "y-", label="naive dropout")
 plt.legend(loc='best')
 plt.xlabel("epochs")
-plt.ylabel("logloss")
+plt.ylabel("Raw MSE")
+plt.subplot(1, 2, 2)
+plt.title("(MC - Approx) Histogram")
+plt.hist([x[1] ** 0.5 - x[0] ** 0.5 for x in modeltest_1.history], alpha=0.5, label="varational")
+plt.hist([x[1] ** 0.5 - x[0] ** 0.5 for x in modeltest_3.history], alpha=0.5, label="navie dropout")
+plt.legend(loc='best')
+plt.xlabel("Difference in Raw MSE")
+plt.ylabel("Count")
+plt.xticks(fontsize=8, rotation=0)
 
 
-# In[ ]:
+# In[39]:
 
 
-
+plt.title("RMSE Comparison - Validation Set")
+plt.plot(np.arange(len(modeltest_1.history)), [x[1] ** 0.5 for x in modeltest_1.history], "b-", label="variational(mc)")
+plt.plot(np.arange(len(modeltest_2.history)), [x[0] ** 0.5 for x in modeltest_2.history], "g-", label="no dropout")
+plt.plot(np.arange(len(modeltest_3.history)), [x[1] ** 0.5 for x in modeltest_3.history], "y-", label="naive dropout(mc)")
+plt.legend(loc='best')
+plt.xlabel("epochs")
+plt.ylabel("RMSE")
 

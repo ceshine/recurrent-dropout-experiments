@@ -1,6 +1,8 @@
 
 # coding: utf-8
 
+# # (PyTorch) IMDB Dataset
+
 # In[1]:
 
 
@@ -163,7 +165,7 @@ def fit(model, optimizer, X_train_tensor, Y_train_tensor, X_test_tensor, Y_test_
                 pred_all, Variable(Y_test_tensor[i:(i+TEST_BATCH_SIZE)]))
             acc.append(
                 torch.eq(
-                    (F.sigmoid(pred_test).data > 0.5).float(), 
+                    (F.sigmoid(pred_all).data > 0.5).float(), 
                     Y_test_tensor[i:(i+TEST_BATCH_SIZE)]
                 )
             )
@@ -192,103 +194,174 @@ X_test_tensor =  torch.from_numpy(X_test).long().cuda()
 # In[6]:
 
 
-model_1 = Model(NB_WORDS, wdrop=0.25, odrop=0.25, edrop=0.25, idrop=0.25)
+model_1 = Model(NB_WORDS, wdrop=0.02, odrop=0.1, edrop=0.2, idrop=0.1)
 model_1.cuda()
 optimizer = torch.optim.Adam([
             {'params': model_1.parameters(), 'lr': 1e-4, 'weight_decay': 1e-4}
-        ],)
+        ])
 epoch_losses_1 = fit(
-    model_1, optimizer, X_train_tensor, Y_train_tensor, X_test_tensor, Y_test_tensor, n_epochs=15)
+    model_1, optimizer, X_train_tensor, Y_train_tensor, X_test_tensor, Y_test_tensor, n_epochs=20)
+
+
+# In[16]:
+
+
+best_epoch = np.argmin([x[2] for x in epoch_losses_1]) + 1
+print("Best Loss: {:.4f} Acc: {:.2f}% Best Epoch: {}".format(
+    epoch_losses_1[best_epoch-1][2], 
+    epoch_losses_1[best_epoch-1][5] * 100, 
+    best_epoch
+))
 
 
 # ## No Dropout
 
-# In[7]:
+# In[8]:
 
 
 model_2 = Model(NB_WORDS, wdrop=0, odrop=0, edrop=0, idrop=0)
 model_2.cuda()
 optimizer = torch.optim.Adam(model_2.parameters(), lr=1e-4)
 epoch_losses_2 = fit(model_2, optimizer, X_train_tensor, Y_train_tensor, 
-                     X_test_tensor, Y_test_tensor, n_epochs=15)
+                     X_test_tensor, Y_test_tensor, n_epochs=20)
 
-
-# ## Naive Dropout (w/o Embedding Dropout)
-
-# In[8]:
-
-
-model_3 = Model(NB_WORDS, wdrop=0, odrop=0.25, edrop=0, idrop=0.25, standard_dropout=True)
-model_3.cuda()
-optimizer = torch.optim.Adam(model_3.parameters(), lr=1e-4)
-epoch_losses_3 = fit(model_3, optimizer, X_train_tensor, Y_train_tensor, 
-                     X_test_tensor, Y_test_tensor, n_epochs=15)
-
-
-# ## Variational LSTM
 
 # In[9]:
 
 
-model_4 = Model(NB_WORDS, wdrop=0.25, odrop=0.25, edrop=0.25, idrop=0.25, variational=True)
+best_epoch = np.argmin([x[1] for x in epoch_losses_2]) + 1
+print("Best Loss: {:.4f} Acc: {:.2f}% Best Epoch: {}".format(
+    epoch_losses_2[best_epoch-1][1], 
+    epoch_losses_2[best_epoch-1][4] * 100, 
+    best_epoch
+))
+
+
+# ## Naive Dropout (w/o Embedding Dropout)
+
+# In[10]:
+
+
+model_3 = Model(NB_WORDS, wdrop=0, odrop=0.2, edrop=0, idrop=0.2, standard_dropout=True)
+model_3.cuda()
+optimizer = torch.optim.Adam(model_3.parameters(), lr=1e-4)
+epoch_losses_3 = fit(model_3, optimizer, X_train_tensor, Y_train_tensor, 
+                     X_test_tensor, Y_test_tensor, n_epochs=20)
+
+
+# In[11]:
+
+
+best_epoch = np.argmin([x[2] for x in epoch_losses_3]) + 1
+print("Best Loss: {:.4f} Acc: {:.2f}% Best Epoch: {}".format(
+    epoch_losses_3[best_epoch-1][2], 
+    epoch_losses_3[best_epoch-1][5] * 100, 
+    best_epoch
+))
+
+
+# ## Variational LSTM
+
+# In[12]:
+
+
+model_4 = Model(NB_WORDS, wdrop=0.02, odrop=0.1, edrop=0.2, idrop=0.1, variational=True)
 model_4.cuda()
-optimizer = torch.optim.Adam(model_4.parameters(), lr=2e-4)
+optimizer = torch.optim.Adam(model_4.parameters(), lr=1e-4)
 epoch_losses_4 = fit(model_4, optimizer, X_train_tensor, Y_train_tensor, 
-                     X_test_tensor, Y_test_tensor, n_epochs=15)
+                     X_test_tensor, Y_test_tensor, n_epochs=20)
+
+
+# In[13]:
+
+
+best_epoch = np.argmin([x[2] for x in epoch_losses_4]) + 1
+print("Best Loss: {:.4f} Acc: {:.2f}% Best Epoch: {}".format(
+    epoch_losses_4[best_epoch-1][2], 
+    epoch_losses_4[best_epoch-1][5] * 100, 
+    best_epoch
+))
+
+
+# ## Variational LSTM w/o Recurrent Dropout
+
+# In[14]:
+
+
+model_5 = Model(NB_WORDS, wdrop=0., odrop=0.1, edrop=0.2, idrop=0.1)
+model_5.cuda()
+optimizer = torch.optim.Adam(model_5.parameters(), lr=1e-4)
+epoch_losses_5= fit(model_5, optimizer, X_train_tensor, Y_train_tensor, 
+                     X_test_tensor, Y_test_tensor, n_epochs=20)
+
+
+# In[17]:
+
+
+best_epoch = np.argmin([x[2] for x in epoch_losses_5]) + 1
+print("Best Loss: {:.4f} Acc: {:.2f}% Best Epoch: {}".format(
+    epoch_losses_5[best_epoch-1][2], 
+    epoch_losses_5[best_epoch-1][5] * 100, 
+    best_epoch
+))
 
 
 # ## Visualizations
 
-# In[22]:
+# In[27]:
 
 
-plt.title("Log Loss Comparison - Training Set")
-plt.plot(np.arange(len(epoch_losses_1)), [x[0] for x in epoch_losses_1], label="weight dropped")
-plt.plot(np.arange(len(epoch_losses_2)), [x[0] for x in epoch_losses_2], "g-", label="no dropout")
-plt.plot(np.arange(len(epoch_losses_3)), [x[0] for x in epoch_losses_3], "y-", label="naive dropout")
-plt.plot(np.arange(len(epoch_losses_4)), [x[0] for x in epoch_losses_4], "m-", label="variational")
+bins = np.arange(-0.03, 0.01, 0.002)
+plt.figure(figsize=(12, 4))
+plt.subplot(1, 2, 1)
+plt.title("Accuracy Comparison - Training Set")
+plt.plot(np.arange(len(epoch_losses_1)), [x[3] * 100 for x in epoch_losses_1], label="weight dropped")
+plt.plot(np.arange(len(epoch_losses_2)), [x[3] * 100 for x in epoch_losses_2], "g-", label="no dropout")
+plt.plot(np.arange(len(epoch_losses_3)), [x[3] * 100 for x in epoch_losses_3], "y-", label="naive dropout")
+plt.plot(np.arange(len(epoch_losses_4)), [x[3] * 100 for x in epoch_losses_4], "m-", label="variational")
+plt.plot(np.arange(len(epoch_losses_5)), [x[3] * 100 for x in epoch_losses_5], "c-", label="v w/o r-drop")
 plt.legend(loc='best')
 plt.xlabel("epochs")
-plt.ylabel("logloss")
-
-
-# In[23]:
-
-
-plt.title("Accuracy Comparison  - Training Set")
-plt.plot(np.arange(len(epoch_losses_1)), [x[3] for x in epoch_losses_1], label="weight dropped")
-plt.plot(np.arange(len(epoch_losses_2)), [x[3] for x in epoch_losses_2], "g-", label="no dropout")
-plt.plot(np.arange(len(epoch_losses_3)), [x[3] for x in epoch_losses_3], "y-", label="standard")
-plt.plot(np.arange(len(epoch_losses_4)), [x[3] for x in epoch_losses_4], "m--", label="variational")
+plt.ylabel("Accuracy (%)")
+plt.subplot(1, 2, 2)
+plt.title("(MC - Approx) Histogram")
+plt.hist([x[2] - x[1] for x in epoch_losses_1], bins=bins, alpha=0.3, label="w-dropped")
+plt.hist([x[2] - x[1] for x in epoch_losses_3], bins=bins, alpha=0.3, label="naive")
+plt.hist([x[2] - x[1] for x in epoch_losses_4], bins=bins, alpha=0.3, label="varational w-drop")
 plt.legend(loc='best')
-plt.xlabel("epochs")
-plt.ylabel("logloss")
+plt.xlabel("Difference in Raw MSE")
+plt.ylabel("Count")
+plt.xticks(fontsize=8, rotation=0)
 
 
-# In[20]:
+# In[33]:
 
 
+plt.figure(figsize=(12, 4))
+plt.subplot(1, 2, 1)
 plt.title("Log Loss Comparison - Validation Set")
-plt.plot(np.arange(len(epoch_losses_1)), [x[1] for x in epoch_losses_1], label="weight dropped")
-plt.plot(np.arange(len(epoch_losses_2)), [x[1] for x in epoch_losses_2], "g-", label="no dropout")
-plt.plot(np.arange(len(epoch_losses_3)), [x[1] for x in epoch_losses_3], "y-", label="naive dropout")
-plt.plot(np.arange(len(epoch_losses_4)), [x[1] for x in epoch_losses_4], "m--", label="variational")
-plt.plot(np.arange(len(epoch_losses_4)), [x[2] for x in epoch_losses_4], "m-", label="variational(mc)")
+plt.plot(np.arange(len(epoch_losses_1)), [x[2] * 100 for x in epoch_losses_1], "b-", label="weight dropped(mc)")
+plt.plot(np.arange(len(epoch_losses_2)), [x[2] * 100 for x in epoch_losses_2], "g-", label="no dropout")
+plt.plot(np.arange(len(epoch_losses_3)), [x[2] * 100 for x in epoch_losses_3], "y-", label="naive dropout(mc)")
+plt.plot(np.arange(len(epoch_losses_4)), [x[2] * 100 for x in epoch_losses_4], "m-", label="variational")
+plt.plot(np.arange(len(epoch_losses_5)), [x[2] * 100 for x in epoch_losses_5], "c-", label="v w/o r-drop")
 plt.legend(loc='best')
 plt.xlabel("epochs")
-plt.ylabel("logloss")
-
-
-# In[19]:
-
-
-plt.title("Accuracy Comparison  - Validation Set")
-plt.plot(np.arange(len(epoch_losses_1)), [x[4] for x in epoch_losses_1], label="weight dropped")
-plt.plot(np.arange(len(epoch_losses_2)), [x[4] for x in epoch_losses_2], "g-", label="no dropout")
-plt.plot(np.arange(len(epoch_losses_3)), [x[4] for x in epoch_losses_3], "y-", label="standard")
-plt.plot(np.arange(len(epoch_losses_4)), [x[4] for x in epoch_losses_4], "m--", label="variational")
-plt.plot(np.arange(len(epoch_losses_4)), [x[5] for x in epoch_losses_4], "m-", label="variational(mc)")
+plt.ylabel("Log Loss")
+plt.subplot(1, 2, 2)
+plt.title("Accuracy Comparison - Validation Set")
+plt.plot(np.arange(len(epoch_losses_1)), [x[5] for x in epoch_losses_1], "b-", label="weight dropped(mc)")
+plt.plot(np.arange(len(epoch_losses_2)), [x[5] for x in epoch_losses_2], "g-", label="no dropout")
+plt.plot(np.arange(len(epoch_losses_3)), [x[5] for x in epoch_losses_3], "y-", label="naive dropout(mc)")
+plt.plot(np.arange(len(epoch_losses_4)), [x[5] for x in epoch_losses_4], "m-", label="variational")
+plt.plot(np.arange(len(epoch_losses_5)), [x[5] for x in epoch_losses_5], "c-", label="v w/o r-drop")
 plt.legend(loc='best')
 plt.xlabel("epochs")
-plt.ylabel("logloss")
+plt.ylabel("Accuracy (%)")
+
+
+# In[ ]:
+
+
+
 
